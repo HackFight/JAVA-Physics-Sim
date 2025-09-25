@@ -1,5 +1,7 @@
 package dev.hackfight;
 
+import dev.hackfight.core.Model;
+import org.joml.*;
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
@@ -18,19 +20,23 @@ public class HelloWorld {
     // The window handle
     private long window;
 
+    private Model triangle;
+
     public void run() {
         System.out.println("Hello LWJGL " + Version.getVersion() + "!");
 
 
-        MemoryStack stack = MemoryStack.stackPush();
-        FloatBuffer vertices = stack.mallocFloat(3 * 8);
-        vertices.put(-0.6f).put(-0.4f).put(0f).put(1f).put(0f).put(0f);
-        vertices.put(0.6f).put(-0.4f).put(0f).put(0f).put(1f).put(0f);
-        vertices.put(0f).put(0.6f).put(0f).put(0f).put(0f).put(1f);
-        vertices.flip();
+        Model.Vertex[] vertices = {
+                new Model.Vertex(new Vector3f(-0.5f, -0.5f, 0f), new Vector2f(0f, 0f), new Vector3f(1f, 0f, 0f)),
+                new Model.Vertex(new Vector3f(0f, 0.5f, 0f), new Vector2f(0.5f, 1f), new Vector3f(0f, 1f, 0f)),
+                new Model.Vertex(new Vector3f(0.5f, -0.5f, 0f), new Vector2f(1f, 0f), new Vector3f(0f, 0f, 1f))
+        };
 
-        LongBuffer indices = stack.mallocLong(3);
-        indices.put(0).put(1).put(2);
+        long[] indices = {
+                0, 1, 2
+        };
+
+        triangle = new Model(vertices, indices);
 
         init();
         loop();
@@ -113,6 +119,9 @@ public class HelloWorld {
         while ( !glfwWindowShouldClose(window) ) {
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
+
+            triangle.bind();
+            triangle.draw();
 
             glfwSwapBuffers(window); // swap the color buffers
 

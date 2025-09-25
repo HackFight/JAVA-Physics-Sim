@@ -2,6 +2,9 @@ package dev.hackfight.core;
 
 import org.joml.*;
 import org.lwjgl.*;
+import org.lwjgl.system.*;
+
+import java.nio.*;
 
 import static org.lwjgl.opengl.GL30C.*;
 
@@ -13,14 +16,20 @@ public class Model {
     private int vertexCount_;
     private int indexCount_;
 
-    public class Vertex {
-        Vector3f position;
-        Vector2f texCoord;
-        Vector3f color;
+    public static class Vertex {
+        public Vector3f position;
+        public Vector2f texCoord;
+        public Vector3f color;
+
+        public Vertex(Vector3f position, Vector2f texCoord, Vector3f color) {
+            this.position = position;
+            this.texCoord = texCoord;
+            this.color = color;
+        }
     }
 
-    public Model(Vertex[] vertices, long[] indices, int indexCount) {
-        this.indexCount_ = indexCount;
+    public Model(Vertex[] vertices, long[] indices) {
+        this.indexCount_ = indices.length;
         createBuffer(vertices, indices);
     }
 
@@ -35,6 +44,16 @@ public class Model {
     private void createBuffer(Vertex[] vertices, long[] indices) {
         vertexCount_ = vertices.length;
 
+        MemoryStack stack = MemoryStack.stackPush();
+        FloatBuffer verticesBuffer = stack.mallocFloat(3 * 8);
+        for (Vertex vertex : vertices)
+        {
+            verticesBuffer.put(vertex.position.x).put(vertex.position.y).put(vertex.position.z);
+            verticesBuffer.put(vertex.texCoord.x).put(vertex.texCoord.y);
+            verticesBuffer.put(vertex.color.x).put(vertex.color.y).put(vertex.color.z);
+        }
+        verticesBuffer.flip();
+
         vao_ = glGenVertexArrays();
         vbo_ = glGenBuffers();
         ebo_ = glGenBuffers();
@@ -42,16 +61,18 @@ public class Model {
         glBindVertexArray(vao_);
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-        glBufferData(GL_ARRAY_BUFFER, vertices.length * sizeOf(Vertex), vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, verticesBuffer, GL_STATIC_DRAW);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indexCount * sizeof(uint32_t), indices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        int floatSize = 4;
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 8 * floatSize, 0);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 2, GL_FLOAT, false, 8 * floatSize, 3 * floatSize);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+        glVertexAttribPointer(2, 3, GL_FLOAT, false, 8 * floatSize, 5 * floatSize);
         glEnableVertexAttribArray(2);
     }
 }
