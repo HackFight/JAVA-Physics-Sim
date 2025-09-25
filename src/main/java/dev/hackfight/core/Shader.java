@@ -1,13 +1,14 @@
 package dev.hackfight.core;
 
 import org.joml.*;
-import org.lwjgl.opengl.GL;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.system.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.FloatBuffer;
 
 import static org.lwjgl.opengl.GL30C.*;
 
@@ -58,11 +59,17 @@ public class Shader {
         glUseProgram(ID);
     }
 
+    public void set2f(String name, float v1, float v2) {
+        glUniform2f(glGetUniformLocation(ID, name), v1, v2);
+    }
     public void set3f(String name, float v1, float v2, float v3) {
         glUniform3f(glGetUniformLocation(ID, name), v1, v2, v3);
     }
 
     public void setMat4(String name, Matrix4f mat4) {
-        glUniformMatrix4fv(glGetUniformLocation(ID, name), false, mat4.get(MemoryStack.stackPush().mallocFloat(16)));
+        FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
+        mat4.get(matrixBuffer);
+
+        glUniformMatrix4fv(glGetUniformLocation(ID, name), false, matrixBuffer);
     }
 }

@@ -2,6 +2,8 @@ package dev.hackfight;
 
 import dev.hackfight.core.Model;
 import dev.hackfight.core.Shader;
+import dev.hackfight.core.SimObject;
+import dev.hackfight.physics2d.PhysicsSimulation2D;
 import org.joml.*;
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
@@ -11,6 +13,7 @@ import org.lwjgl.system.*;
 import java.io.IOException;
 import java.nio.*;
 import java.nio.file.Path;
+import java.util.Timer;
 
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
@@ -22,6 +25,8 @@ public class HelloWorld {
 
     // The window handle
     private long window;
+
+    private Timer timer;
 
     private Shader defaultShader;
     private Model triangle;
@@ -132,11 +137,23 @@ public class HelloWorld {
         defaultShader.bind();
         triangle.bind();
 
+        double lastLoopTime = glfwGetTime();
+        double timeCount = 0.0;
+
+        SimObject ball = new SimObject(triangle, defaultShader);
+        ball.addForce(new Vector2f(0f, -9.81f));
+
         while ( !glfwWindowShouldClose(window) ) {
+            double time = glfwGetTime();
+            float delta = (float) (time - lastLoopTime);
+            lastLoopTime = time;
+            timeCount += delta;
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
-            triangle.draw();
+            ball.update(delta);
+            ball.render();
+            System.out.println(ball.getPos().y);
 
             glfwSwapBuffers(window); // swap the color buffers
             glfwPollEvents();
