@@ -21,6 +21,17 @@ public class HelloWorld {
     public void run() {
         System.out.println("Hello LWJGL " + Version.getVersion() + "!");
 
+
+        MemoryStack stack = MemoryStack.stackPush();
+        FloatBuffer vertices = stack.mallocFloat(3 * 8);
+        vertices.put(-0.6f).put(-0.4f).put(0f).put(1f).put(0f).put(0f);
+        vertices.put(0.6f).put(-0.4f).put(0f).put(0f).put(1f).put(0f);
+        vertices.put(0f).put(0.6f).put(0f).put(0f).put(0f).put(1f);
+        vertices.flip();
+
+        LongBuffer indices = stack.mallocLong(3);
+        indices.put(0).put(1).put(2);
+
         init();
         loop();
 
@@ -95,11 +106,12 @@ public class HelloWorld {
         GL.createCapabilities();
 
         // Set the clear color
-        glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+        glClearColor(0.270588235f, 0.2823529411764706f, 0.4235294117647059f, 0.0f); //#45486C
 
         // Run the rendering loop until the user has attempted to close
         // the window or has pressed the ESCAPE key.
         while ( !glfwWindowShouldClose(window) ) {
+
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
             glfwSwapBuffers(window); // swap the color buffers
