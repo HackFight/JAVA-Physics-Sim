@@ -1,6 +1,8 @@
 package dev.hackfight.core;
 
 import org.joml.*;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.system.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,6 +15,7 @@ public class Shader {
     public int ID;
 
     public Shader(Path vertexPath, Path fragmentPath) throws IOException {
+
         // retrieve source code
         String vertexSrc = Files.readString(vertexPath, StandardCharsets.UTF_8);
         String fragSrc = Files.readString(fragmentPath, StandardCharsets.UTF_8);
@@ -21,32 +24,37 @@ public class Shader {
         int vertexShader = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertexShader, vertexSrc);
         glCompileShader(vertexShader);
+        // check
+        int status = glGetShaderi(vertexShader, GL_COMPILE_STATUS);
+        if (status != GL_TRUE) {
+            throw new RuntimeException(glGetShaderInfoLog(vertexShader));
+        }
 
         int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragmentShader, fragSrc);
         glCompileShader(fragmentShader);
-
-        int status = glGetShaderi(ID, GL_COMPILE_STATUS);
+        //check
+        status = glGetShaderi(fragmentShader, GL_COMPILE_STATUS);
         if (status != GL_TRUE) {
-            throw new RuntimeException(glGetShaderInfoLog(ID));
+            throw new RuntimeException(glGetShaderInfoLog(fragmentShader));
         }
 
         // shader program
-        int shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertexShader);
-        glAttachShader(shaderProgram, fragmentShader);
-        glLinkProgram(shaderProgram);
-
-        status = glGetProgrami(shaderProgram, GL_LINK_STATUS);
+        ID = glCreateProgram();
+        glAttachShader(ID, vertexShader);
+        glAttachShader(ID, fragmentShader);
+        glLinkProgram(ID);
+        // check
+        status = glGetProgrami(ID, GL_LINK_STATUS);
         if (status != GL_TRUE) {
-            throw new RuntimeException(glGetProgramInfoLog(shaderProgram));
+            throw new RuntimeException(glGetProgramInfoLog(ID));
         }
 
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
     }
 
-    public void Bind() {
+    public void bind() {
         glUseProgram(ID);
     }
 
@@ -55,6 +63,6 @@ public class Shader {
     }
 
     public void setMat4(String name, Matrix4f mat4) {
-        glUniformMatrix4fv(glGetUniformLocation(ID, name), false, mat4.getBuffer());
+        glUniformMatrix4fv(glGetUniformLocation(ID, name), false, mat4.get(MemoryStack.stackPush().mallocFloat(16)));
     }
 }

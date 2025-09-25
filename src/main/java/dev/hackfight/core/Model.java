@@ -28,7 +28,7 @@ public class Model {
         }
     }
 
-    public Model(Vertex[] vertices, long[] indices) {
+    public Model(Vertex[] vertices, int[] indices) {
         this.indexCount_ = indices.length;
         createBuffer(vertices, indices);
     }
@@ -41,7 +41,7 @@ public class Model {
         glDrawElements(GL_TRIANGLES, indexCount_, GL_UNSIGNED_INT, 0);
     }
 
-    private void createBuffer(Vertex[] vertices, long[] indices) {
+    private void createBuffer(Vertex[] vertices, int[] indices) {
         vertexCount_ = vertices.length;
 
         MemoryStack stack = MemoryStack.stackPush();

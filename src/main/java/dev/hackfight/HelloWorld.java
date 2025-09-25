@@ -1,13 +1,16 @@
 package dev.hackfight;
 
 import dev.hackfight.core.Model;
+import dev.hackfight.core.Shader;
 import org.joml.*;
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
 
+import java.io.IOException;
 import java.nio.*;
+import java.nio.file.Path;
 
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
@@ -20,25 +23,18 @@ public class HelloWorld {
     // The window handle
     private long window;
 
+    private Shader defaultShader;
     private Model triangle;
 
     public void run() {
         System.out.println("Hello LWJGL " + Version.getVersion() + "!");
 
-
-        Model.Vertex[] vertices = {
-                new Model.Vertex(new Vector3f(-0.5f, -0.5f, 0f), new Vector2f(0f, 0f), new Vector3f(1f, 0f, 0f)),
-                new Model.Vertex(new Vector3f(0f, 0.5f, 0f), new Vector2f(0.5f, 1f), new Vector3f(0f, 1f, 0f)),
-                new Model.Vertex(new Vector3f(0.5f, -0.5f, 0f), new Vector2f(1f, 0f), new Vector3f(0f, 0f, 1f))
-        };
-
-        long[] indices = {
-                0, 1, 2
-        };
-
-        triangle = new Model(vertices, indices);
-
         init();
+        try {
+            loadAssets();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         loop();
 
         // Free the window callbacks and destroy the window
@@ -48,6 +44,24 @@ public class HelloWorld {
         // Terminate GLFW and free the error callback
         glfwTerminate();
         glfwSetErrorCallback(null).free();
+    }
+
+    private void loadAssets() throws IOException {
+        // shaders
+        defaultShader = new Shader(Path.of("C:\\Dev\\JAVA\\JAVA-Physics-Sim\\src\\main\\resources\\shaders\\default.vert"), Path.of("C:\\Dev\\JAVA\\JAVA-Physics-Sim\\src\\main\\resources\\shaders\\default.frag"));
+
+        // models
+        Model.Vertex[] vertices = {
+                new Model.Vertex(new Vector3f(-0.5f, -0.5f, 0f), new Vector2f(0f, 0f), new Vector3f(1f, 0f, 0f)),
+                new Model.Vertex(new Vector3f(0f, 0.5f, 0f), new Vector2f(0.5f, 1f), new Vector3f(0f, 1f, 0f)),
+                new Model.Vertex(new Vector3f(0.5f, -0.5f, 0f), new Vector2f(1f, 0f), new Vector3f(0f, 0f, 1f))
+        };
+
+        int[] indices = {
+                0, 1, 2
+        };
+
+        triangle = new Model(vertices, indices);
     }
 
     private void init() {
@@ -63,11 +77,15 @@ public class HelloWorld {
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the window will be resizable
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
         // Create the window
         window = glfwCreateWindow(300, 300, "Hello World!", NULL, NULL);
         if ( window == NULL )
             throw new RuntimeException("Failed to create the GLFW window");
+
+        // Setup a frame buffer resize callback
+        glfwSetFramebufferSizeCallback(window, this::framebuffer_size_callback);
 
         // Setup a key callback. It will be called every time a key is pressed, repeated or released.
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
@@ -96,6 +114,9 @@ public class HelloWorld {
 
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
+
+        GL.createCapabilities();
+        Callback debugProc = GLUtil.setupDebugMessageCallback(); // may return null if the debug mode is not available
         // Enable v-sync
         glfwSwapInterval(1);
 
@@ -104,35 +125,39 @@ public class HelloWorld {
     }
 
     private void loop() {
-        // This line is critical for LWJGL's interoperation with GLFW's
-        // OpenGL context, or any context that is managed externally.
-        // LWJGL detects the context that is current in the current thread,
-        // creates the GLCapabilities instance and makes the OpenGL
-        // bindings available for use.
         GL.createCapabilities();
 
-        // Set the clear color
         glClearColor(0.270588235f, 0.2823529411764706f, 0.4235294117647059f, 0.0f); //#45486C
 
-        // Run the rendering loop until the user has attempted to close
-        // the window or has pressed the ESCAPE key.
+        defaultShader.bind();
+        triangle.bind();
+
         while ( !glfwWindowShouldClose(window) ) {
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
-            triangle.bind();
             triangle.draw();
 
             glfwSwapBuffers(window); // swap the color buffers
-
-            // Poll for window events. The key callback above will only be
-            // invoked during this call.
             glfwPollEvents();
         }
     }
 
+    private void framebuffer_size_callback(long window, int width, int height)
+    {
+        // make sure the viewport matches the new window dimensions; note that width and
+        // height will be significantly larger than specified on retina displays.
+        glViewport(0, 0, width, height);
+    }
+
     public static void main(String[] args) {
-        new HelloWorld().run();
+        //System.loadLibrary("renderdoc");
+
+        try {
+            new HelloWorld().run();
+        } catch (RuntimeException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
 }
