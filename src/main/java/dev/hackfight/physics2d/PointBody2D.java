@@ -8,8 +8,8 @@ public class PointBody2D {
     private Vector2f acceleration_;
 
     public PointBody2D(Vector2f pos) {
-        position_ = pos;
-        lastPosition_ = pos;
+        position_ = new Vector2f(pos);
+        lastPosition_ = new Vector2f(pos);
         acceleration_ = new Vector2f(0f, 0f);
     }
     public PointBody2D() {
@@ -21,12 +21,12 @@ public class PointBody2D {
     }
     public void setPosition(Vector2f pos, boolean conserveVel) {
         if (conserveVel) {
-            Vector2f vel = getVelocity();
-            position_ = pos;
+            Vector2f vel = new Vector2f(getVelocity());
+            position_ = new Vector2f(pos);
             setVelocity(vel);
         } else {
-            position_ = pos;
-            lastPosition_ = pos;
+            position_ = new Vector2f(pos);
+            lastPosition_ = new Vector2f(pos);
         }
     }
     public void setPosition_(Vector2f pos) {
@@ -45,13 +45,17 @@ public class PointBody2D {
     }
 
     public void update(float dt) {
-        Vector2f tempPos = position_;
-        position_ = position_.mul(2);
-        position_ = position_.sub(lastPosition_);
-        Vector2f temp = acceleration_.mul(dt *dt);
-        position_ = position_.add(temp);
-
+        // solve verlet integration
+        Vector2f tempPos = new Vector2f(position_);
+        position_ = position_.mul(2).sub(lastPosition_).add(acceleration_.mul(dt * dt));
         lastPosition_ = tempPos;
         acceleration_ = acceleration_.mul(0);
+
+        // solve constraints
+        if (position_.y < -25f) {
+            Vector2f tempVel = new Vector2f(getVelocity().x, -getVelocity().y);
+            position_.y = -25f;
+            setVelocity(tempVel);
+        }
     }
 }
