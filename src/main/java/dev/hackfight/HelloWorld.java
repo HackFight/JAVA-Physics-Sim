@@ -1,9 +1,6 @@
 package dev.hackfight;
 
-import dev.hackfight.core.Model;
-import dev.hackfight.core.Shader;
-import dev.hackfight.core.SimObject;
-import dev.hackfight.physics2d.PhysicsSimulation2D;
+import dev.hackfight.core.*;
 import org.joml.*;
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
@@ -53,7 +50,7 @@ public class HelloWorld {
 
     private void loadAssets() throws IOException {
         // shaders
-        defaultShader = new Shader(Path.of("C:\\Dev\\JAVA\\JAVA-Physics-Sim\\src\\main\\resources\\shaders\\default.vert"), Path.of("C:\\Dev\\JAVA\\JAVA-Physics-Sim\\src\\main\\resources\\shaders\\default.frag"));
+        defaultShader = new Shader(Path.of("src/main/resources/shaders/default.vert"), Path.of("src/main/resources/shaders/default.frag"));
 
         // models
         Model.Vertex[] vertices = {
@@ -109,12 +106,14 @@ public class HelloWorld {
             // Get the resolution of the primary monitor
             GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
-            // Center the window
-            glfwSetWindowPos(
-                    window,
-                    (vidmode.width() - pWidth.get(0)) / 2,
-                    (vidmode.height() - pHeight.get(0)) / 2
-            );
+            if (OsValidator.isWindows()) {
+                // Center the window
+                glfwSetWindowPos(
+                        window,
+                        (vidmode.width() - pWidth.get(0)) / 2,
+                        (vidmode.height() - pHeight.get(0)) / 2
+                );
+            }
         } // the stack frame is popped automatically
 
         // Make the OpenGL context current
