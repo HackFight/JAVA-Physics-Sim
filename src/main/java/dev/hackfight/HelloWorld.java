@@ -30,8 +30,8 @@ public class HelloWorld {
     private Shader defaultShader;
     private Model triangle;
 
-    private int NB_BODIES = 350;
-    private float GRAVITATIONAL_CONSTANT = 0.5f;
+    private int NB_BODIES = 100;
+    private float GRAVITATIONAL_CONSTANT = 10f;
 
     public void run() {
         System.out.println("Hello LWJGL " + Version.getVersion() + "!");
@@ -55,12 +55,12 @@ public class HelloWorld {
 
     private void loadAssets() throws IOException {
         // shaders
-        defaultShader = new Shader(Path.of("src/main/resources/shaders/default.vert"), Path.of("src/main/resources/shaders/default.frag"));
+        defaultShader = new Shader(Path.of("src/main/resources/shaders/default.vert"), Path.of("src/main/resources/shaders/circle.frag"));
 
         // models
         Model.Vertex[] vertices = {
-                new Model.Vertex(new Vector3f(-0.5773502692f, -1f, 0f), new Vector2f(0f, 0f), new Vector3f(1f, 0f, 0f)),
-                new Model.Vertex(new Vector3f(0.5773502692f, -1f, 0f), new Vector2f(0.5f, 1f), new Vector3f(0f, 1f, 0f)),
+                new Model.Vertex(new Vector3f(-1.73205f, -1f, 0f), new Vector2f(0f, 0f), new Vector3f(1f, 0f, 0f)),
+                new Model.Vertex(new Vector3f(1.73205f, -1f, 0f), new Vector2f(0.5f, 1f), new Vector3f(0f, 1f, 0f)),
                 new Model.Vertex(new Vector3f(0f, 2f, 0f), new Vector2f(1f, 0f), new Vector3f(0f, 0f, 1f))
         };
 
@@ -202,9 +202,9 @@ public class HelloWorld {
         glViewport(0, 0, width, height);
         float ratio = (float) width/ (float) height;
         if (width > height) {
-            Camera.getInstance().setCameraSize(-25f*ratio, 25f*ratio, -25f, 25f, 0.1f, 10f);
-        } else {
             Camera.getInstance().setCameraSize(-25f, 25f, -25f*(1/ratio), 25f*(1/ratio), 0.1f, 10f);
+        } else {
+            Camera.getInstance().setCameraSize(-25f*ratio, 25f*ratio, -25f, 25f, 0.1f, 10f);
         }
     }
 

@@ -9,9 +9,11 @@ uniform mat4 view;
 uniform mat4 projection;
 
 out vec3 vertexColor;
+out vec2 fragCoord;
 
 void main() {
     mat4 mvp = projection * view * model;
     gl_Position = mvp * vec4(position, 1.0);
     vertexColor = color;
+    fragCoord = position.xy;
 }
