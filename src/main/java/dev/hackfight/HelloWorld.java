@@ -8,8 +8,10 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
 
 import java.io.IOException;
+import java.lang.Math;
 import java.nio.*;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Timer;
 
 import static org.lwjgl.glfw.Callbacks.*;
@@ -27,6 +29,9 @@ public class HelloWorld {
 
     private Shader defaultShader;
     private Model triangle;
+
+    private int NB_BODIES = 350;
+    private float GRAVITATIONAL_CONSTANT = 0.5f;
 
     public void run() {
         System.out.println("Hello LWJGL " + Version.getVersion() + "!");
@@ -54,9 +59,9 @@ public class HelloWorld {
 
         // models
         Model.Vertex[] vertices = {
-                new Model.Vertex(new Vector3f(-0.5f, -0.5f, 0f), new Vector2f(0f, 0f), new Vector3f(1f, 0f, 0f)),
-                new Model.Vertex(new Vector3f(0f, 0.5f, 0f), new Vector2f(0.5f, 1f), new Vector3f(0f, 1f, 0f)),
-                new Model.Vertex(new Vector3f(0.5f, -0.5f, 0f), new Vector2f(1f, 0f), new Vector3f(0f, 0f, 1f))
+                new Model.Vertex(new Vector3f(-0.5773502692f, -1f, 0f), new Vector2f(0f, 0f), new Vector3f(1f, 0f, 0f)),
+                new Model.Vertex(new Vector3f(0.5773502692f, -1f, 0f), new Vector2f(0.5f, 1f), new Vector3f(0f, 1f, 0f)),
+                new Model.Vertex(new Vector3f(0f, 2f, 0f), new Vector2f(1f, 0f), new Vector3f(0f, 0f, 1f))
         };
 
         int[] indices = {
@@ -138,21 +143,52 @@ public class HelloWorld {
 
         double lastLoopTime = glfwGetTime();
         double timeCount = 0.0;
+        float secondTicker = 0f;
 
-        SimObject ball = new SimObject(triangle, defaultShader);
-        ball.addForce(new Vector2f(0f, -9.81f));
+        Random r = new Random();
+
+        ArrayList<SimObject> bodies = new ArrayList<SimObject>();
+        for(int i=0; i < NB_BODIES; i++) {
+            float random1 = -15f + r.nextFloat() * (15f + 15f);
+            float random2 = -15f + r.nextFloat() * (15f + 15f);
+            SimObject instance = new SimObject(triangle, defaultShader, new Vector2f(random1, random2));
+            bodies.add(instance);
+        }
 
         while ( !glfwWindowShouldClose(window) ) {
             double time = glfwGetTime();
             float delta = (float) (time - lastLoopTime);
+            float fps = 1f/delta;
             lastLoopTime = time;
             timeCount += delta;
+            secondTicker += delta;
+            if (secondTicker >= 1f) {
+                secondTicker = 0f;
+                System.out.println(fps);
+            }
+
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
-            ball.update(delta);
-            ball.render();
-            System.out.println(ball.getPos().y);
+            for(int i=0; i < 10; i++) {
+                for (int j=0; j < bodies.size(); j++) {
+                    for (int k=j+1; k < bodies.size() ; k++) {
+                        Vector2f dif = new Vector2f(bodies.get(k).getPos()).sub(bodies.get(j).getPos());
+                        float d = Math.clamp(dif.length(), 1f, 100f);
+                        float magnitude = GRAVITATIONAL_CONSTANT / (d * d);
+                        Vector2f gravity = dif.normalize(magnitude);
+                        bodies.get(j).addForce(gravity);
+                        bodies.get(k).addForce(new Vector2f(gravity).mul(-1f));
+                    }
+                }
+                for (SimObject body : bodies) {
+                    body.update(delta/10f);
+                    body.clearForces();
+                }
+            }
+            for (SimObject body: bodies) {
+                body.render();
+            }
 
             glfwSwapBuffers(window); // swap the color buffers
             glfwPollEvents();
@@ -164,6 +200,12 @@ public class HelloWorld {
         // make sure the viewport matches the new window dimensions; note that width and
         // height will be significantly larger than specified on retina displays.
         glViewport(0, 0, width, height);
+        float ratio = (float) width/ (float) height;
+        if (width > height) {
+            Camera.getInstance().setCameraSize(-25f*ratio, 25f*ratio, -25f, 25f, 0.1f, 10f);
+        } else {
+            Camera.getInstance().setCameraSize(-25f, 25f, -25f*(1/ratio), 25f*(1/ratio), 0.1f, 10f);
+        }
     }
 
     public static void main(String[] args) {

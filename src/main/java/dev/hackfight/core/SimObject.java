@@ -30,9 +30,18 @@ public class SimObject {
     public void addForce(Vector2f force) {
         forces_.add(force);
     }
+    public void clearForces() {
+        forces_ = new ArrayList<>();
+    }
+    public void setForce(int i, Vector2f force) {
+        forces_.get(i).set(force);
+    }
+    public void setVelocity(Vector2f vel) {
+        body_.setVelocity(vel);
+    }
 
     public void update(float dt) {
-        Vector2f totalForces = new Vector2f(0f, 0f);
+        Vector2f totalForces = new Vector2f();
         for (Vector2f force : forces_) {
             totalForces = totalForces.add(force);
         }
@@ -42,14 +51,13 @@ public class SimObject {
     }
 
     public void render() {
-        Matrix4f model = new Matrix4f().translate(body_.getPosition().x, body_.getPosition().y, 0f);;
+        Matrix4f model = new Matrix4f().translate(body_.getPosition().x, body_.getPosition().y, 0f);
         Matrix4f view = new Matrix4f().translate(0f, 0f, -1f);
-        Matrix4f projection = new Matrix4f().ortho(-25f, 25f, -25f, 25f, 0.01f, 10f);
 
         shader_.bind();
         shader_.setMat4("model", model);
         shader_.setMat4("view", view);
-        shader_.setMat4("projection", projection);
+        shader_.setMat4("projection", Camera.getInstance().getMat());
 
         model_.bind();
         model_.draw();
