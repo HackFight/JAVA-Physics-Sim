@@ -1,6 +1,8 @@
 package dev.hackfight;
 
 import dev.hackfight.core.*;
+import dev.hackfight.physics2d.Particle;
+import dev.hackfight.physics2d.ParticlePhysicsWorld;
 import org.joml.*;
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
@@ -20,7 +22,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryStack.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
-public class HelloWorld {
+public class Bounce {
 
     // The window handle
     private long window;
@@ -28,10 +30,10 @@ public class HelloWorld {
     private Timer timer;
 
     private Shader defaultShader;
+    private Shader billboardShader;
     private Model triangle;
 
-    private int NB_BODIES = 100;
-    private float GRAVITATIONAL_CONSTANT = 10f;
+    private ParticlePhysicsWorld physWorld;
 
     public void run() {
         System.out.println("Hello LWJGL " + Version.getVersion() + "!");
@@ -51,24 +53,6 @@ public class HelloWorld {
         // Terminate GLFW and free the error callback
         glfwTerminate();
         glfwSetErrorCallback(null).free();
-    }
-
-    private void loadAssets() throws IOException {
-        // shaders
-        defaultShader = new Shader(Path.of("src/main/resources/shaders/default.vert"), Path.of("src/main/resources/shaders/circle.frag"));
-
-        // models
-        Model.Vertex[] vertices = {
-                new Model.Vertex(new Vector3f(-1.73205f, -1f, 0f), new Vector2f(0f, 0f), new Vector3f(1f, 0f, 0f)),
-                new Model.Vertex(new Vector3f(1.73205f, -1f, 0f), new Vector2f(0.5f, 1f), new Vector3f(0f, 1f, 0f)),
-                new Model.Vertex(new Vector3f(0f, 2f, 0f), new Vector2f(1f, 0f), new Vector3f(0f, 0f, 1f))
-        };
-
-        int[] indices = {
-                0, 1, 2
-        };
-
-        triangle = new Model(vertices, indices);
     }
 
     private void init() {
@@ -141,18 +125,16 @@ public class HelloWorld {
         defaultShader.bind();
         triangle.bind();
 
+        physWorld = new ParticlePhysicsWorld();
+
         double lastLoopTime = glfwGetTime();
         double timeCount = 0.0;
         float secondTicker = 0f;
 
-        Random r = new Random();
-
-        ArrayList<SimObject> bodies = new ArrayList<SimObject>();
-        for(int i=0; i < NB_BODIES; i++) {
-            float random1 = -15f + r.nextFloat() * (15f + 15f);
-            float random2 = -15f + r.nextFloat() * (15f + 15f);
-            SimObject instance = new SimObject(triangle, defaultShader, new Vector2f(random1, random2));
-            bodies.add(instance);
+        ArrayList<ParticleObject> objects = new ArrayList<>();
+        objects.add(new ParticleObject(triangle, billboardShader));
+        for (ParticleObject object : objects) {
+            physWorld.addParticle(object.particle);
         }
 
         while ( !glfwWindowShouldClose(window) ) {
@@ -166,33 +148,39 @@ public class HelloWorld {
                 secondTicker = 0f;
                 System.out.println(fps);
             }
+            delta = Math.clamp(delta, 0f, 1f/30f); //Clamp delta to 30FPS to avoid glitches in case of lag spike, or `delta=0.0` at start.
 
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
-            for(int i=0; i < 10; i++) {
-                for (int j=0; j < bodies.size(); j++) {
-                    for (int k=j+1; k < bodies.size() ; k++) {
-                        Vector2f dif = new Vector2f(bodies.get(k).getPos()).sub(bodies.get(j).getPos());
-                        float d = Math.clamp(dif.length(), 1f, 100f);
-                        float magnitude = GRAVITATIONAL_CONSTANT / (d * d);
-                        Vector2f gravity = dif.normalize(magnitude);
-                        bodies.get(j).addForce(gravity);
-                        bodies.get(k).addForce(new Vector2f(gravity).mul(-1f));
-                    }
-                }
-                for (SimObject body : bodies) {
-                    body.update(delta/10f);
-                    body.clearForces();
-                }
-            }
-            for (SimObject body: bodies) {
-                body.render();
+            physWorld.step(delta);
+
+            for (ParticleObject object : objects) {
+                object.render();
             }
 
             glfwSwapBuffers(window); // swap the color buffers
             glfwPollEvents();
         }
+    }
+
+    private void loadAssets() throws IOException {
+        // shaders
+        defaultShader = new Shader(Path.of("src/main/resources/shaders/default.vert"), Path.of("src/main/resources/shaders/circle.frag"));
+        billboardShader = new Shader(Path.of("src/main/resources/shaders/billboard.vert"), Path.of("src/main/resources/shaders/circle.frag"));
+
+        // models
+        Model.Vertex[] vertices = {
+                new Model.Vertex(new Vector3f(-1.73205f, -1f, 0f), new Vector2f(0f, 0f), new Vector3f(1f, 0f, 0f)),
+                new Model.Vertex(new Vector3f(1.73205f, -1f, 0f), new Vector2f(0.5f, 1f), new Vector3f(0f, 1f, 0f)),
+                new Model.Vertex(new Vector3f(0f, 2f, 0f), new Vector2f(1f, 0f), new Vector3f(0f, 0f, 1f))
+        };
+
+        int[] indices = {
+                0, 1, 2
+        };
+
+        triangle = new Model(vertices, indices);
     }
 
     private void framebuffer_size_callback(long window, int width, int height)
@@ -212,7 +200,7 @@ public class HelloWorld {
         //System.loadLibrary("renderdoc");
 
         try {
-            new HelloWorld().run();
+            new Bounce().run();
         } catch (RuntimeException e) {
             System.out.println(e.getMessage());
         }
