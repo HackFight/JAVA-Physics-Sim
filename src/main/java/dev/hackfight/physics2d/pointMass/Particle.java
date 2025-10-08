@@ -1,13 +1,14 @@
-package dev.hackfight.physics2d;
+package dev.hackfight.physics2d.pointMass;
 
-import dev.hackfight.core.*;
 import org.joml.*;
+
+import java.lang.Math;
 
 public class Particle {
     private Vector3f position = new Vector3f();
     private Vector3f velocity = new Vector3f();
     private Vector3f force = new Vector3f();
-    private float w = 0.0f;
+    private float w = 1f;
 
     //Setters & getters
     public void setPos(float x, float y, float z) {
@@ -44,16 +45,27 @@ public class Particle {
     }
 
     public void setMass(float mass) {
-        w = 1f/mass;
+        if(mass <= 0f) {
+            w = 1f;
+        } else {
+            w = 1f / mass;
+        }
     }
     public void setW(float invMass) {
-        w = invMass;
+        w = Math.clamp(invMass, 0f, 1f);
+    }
+    public float w() {
+        return w;
     }
 
     public Particle(Vector3f pos, Vector3f vel, Vector3f force, float mass) {
         setPos(pos);
         setVel(vel);
         setForce(force);
+        setMass(mass);
+    }
+    public Particle(Vector3f pos, float mass) {
+        setPos(pos);
         setMass(mass);
     }
     public Particle(Vector3f pos) {

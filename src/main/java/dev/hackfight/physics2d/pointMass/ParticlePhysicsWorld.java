@@ -1,4 +1,4 @@
-package dev.hackfight.physics2d;
+package dev.hackfight.physics2d.pointMass;
 
 import org.joml.Vector3f;
 
@@ -9,6 +9,7 @@ public class ParticlePhysicsWorld {
     private final float FLOOR_HEIGHT = 0f;
 
     private ArrayList<Particle> particles = new ArrayList<>();
+    private ArrayList<Constraint> constraints = new ArrayList<>();
     private final Vector3f GRAVITY = new Vector3f(0f, -9.81f, 0f);
     public Vector3f getGravity()
     {
@@ -22,24 +23,28 @@ public class ParticlePhysicsWorld {
         particles.remove(particle);
     }
 
+    public void addConstraint(Constraint constraint) {
+        constraints.add(constraint);
+    }
+    public void removeConstraint(Constraint constraint) {
+        constraints.remove(constraint);
+    }
+
     public void step(float dt) {
         for (Particle particle : particles) {
             particle.setVel(particle.getVel().add(getGravity().mul(dt)));
             Vector3f lastPos = particle.getPos();
             particle.setPos(particle.getPos().add(particle.getVel().mul(dt)));
 
-            solve(particles, dt);
+            solve(dt);
 
             particle.setVel(particle.getPos().sub(lastPos).mul(1f/dt));
         }
     }
 
-    private void solve(ArrayList<Particle> particles, float dt) {
-        for (Particle particle : particles) {
-            Vector3f pos = particle.getPos();
-            if(pos.y < -25f) {
-                particle.setPos(pos.x, -25f, pos.z);
-            }
+    private void solve(float dt) {
+        for (Constraint constraint : constraints) {
+            constraint.solve();
         }
     }
 }

@@ -14,18 +14,25 @@ public class Camera {
         return projectionMat;
     }
 
+    public void setPos(float x, float y, float z) {
+        position.x = x; position.y = y; position.z = z;
+    }
     public Vector3f getPos() {
         return new Vector3f(position);
     }
 
-    private Camera() {
+    private Camera(Vector3f pos) {
         projectionMat = new Matrix4f().ortho(-5f, 5f, -5f, 5f, 0.01f, 10f);
+        position = new Vector3f(pos);
     }
 
-    public static Camera getInstance() {
+    public static void create(Vector3f pos) {
         if(INSTANCE == null) {
-            INSTANCE = new Camera();
+            INSTANCE = new Camera(pos);
         }
+    }
+    public static Camera getInstance() {
+        create(new Vector3f(0f));
         return INSTANCE;
     }
 }

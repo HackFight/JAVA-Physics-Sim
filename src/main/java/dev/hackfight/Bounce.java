@@ -1,8 +1,7 @@
 package dev.hackfight;
 
 import dev.hackfight.core.*;
-import dev.hackfight.physics2d.Particle;
-import dev.hackfight.physics2d.ParticlePhysicsWorld;
+import dev.hackfight.physics2d.pointMass.*;
 import org.joml.*;
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
@@ -10,7 +9,6 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
 
 import java.io.IOException;
-import java.lang.Math;
 import java.nio.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -56,11 +54,10 @@ public class Bounce {
     }
 
     private void init() {
-        // Setup an error callback. The default implementation
-        // will print the error message in System.err.
+        // Setup an error callback
         GLFWErrorCallback.createPrint(System.err).set();
 
-        // Initialize GLFW. Most GLFW functions will not work before doing this.
+        // Initialize GLFW
         if ( !glfwInit() )
             throw new IllegalStateException("Unable to initialize GLFW");
 
@@ -78,10 +75,10 @@ public class Bounce {
         // Setup a frame buffer resize callback
         glfwSetFramebufferSizeCallback(window, this::framebuffer_size_callback);
 
-        // Setup a key callback. It will be called every time a key is pressed, repeated or released.
+        // Setup a key callback
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
-                glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
+                glfwSetWindowShouldClose(window, true);
         });
 
         // Get the thread stack and push a new frame
@@ -103,13 +100,14 @@ public class Bounce {
                         (vidmode.height() - pHeight.get(0)) / 2
                 );
             }
-        } // the stack frame is popped automatically
+        }
 
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
 
         GL.createCapabilities();
-        Callback debugProc = GLUtil.setupDebugMessageCallback(); // may return null if the debug mode is not available
+        Callback debugProc = GLUtil.setupDebugMessageCallback();
+
         // Enable v-sync
         glfwSwapInterval(1);
 
@@ -118,49 +116,78 @@ public class Bounce {
     }
 
     private void loop() {
+        //Create capabilities, important for some java stuff
         GL.createCapabilities();
-
+        //Set buffer clear color cus why not
         glClearColor(0.270588235f, 0.2823529411764706f, 0.4235294117647059f, 0.0f); //#45486C
 
-        defaultShader.bind();
-        triangle.bind();
-
+        // Instantiate the physic world
         physWorld = new ParticlePhysicsWorld();
 
-        double lastLoopTime = glfwGetTime();
-        double timeCount = 0.0;
-        float secondTicker = 0f;
-
+        // Create particles
         ArrayList<ParticleObject> objects = new ArrayList<>();
-        objects.add(new ParticleObject(triangle, billboardShader));
+        objects.add(new ParticleObject(triangle, billboardShader, new Vector3f(-1f, 10f, 0f)));
+        objects.add(new ParticleObject(triangle, billboardShader, new Vector3f(1f, 5f, 0f)));
         for (ParticleObject object : objects) {
             physWorld.addParticle(object.particle);
         }
 
+        // Create constraints
+        /* //Let's ignore this shit
+        // TODO: FIX THIS AWIFWLAKGF£&*POKAL of Distance Constraint!!!!!!!!
+        ArrayList<Particle> pair = new ArrayList<>();
+        pair.add(objects.get(0).particle);
+        pair.add(objects.get(1).particle);
+        physWorld.addConstraint(new DistanceConstraint(pair, 5f));
+        */
+
+        ArrayList<Particle> all = new ArrayList<>();
+        for(ParticleObject object : objects) {
+            all.add(object.particle);
+        }
+        physWorld.addConstraint(new FloorConstraint(all, 0f));
+
+        //Only these model and shader  will be used so we can bind them here instead of each frame.
+        billboardShader.bind();
+        triangle.bind();
+
+        Camera.create(new Vector3f(0f, -5f, -1f));
+
+        //Variables for delta time
+        double lastLoopTime = glfwGetTime();
+        double delta = 0.0;
+        double timeAccumulator = 0.0;
+        float fixedStepTime = 1f/1000f;
         while ( !glfwWindowShouldClose(window) ) {
-            double time = glfwGetTime();
-            float delta = (float) (time - lastLoopTime);
-            float fps = 1f/delta;
-            lastLoopTime = time;
-            timeCount += delta;
-            secondTicker += delta;
-            if (secondTicker >= 1f) {
-                secondTicker = 0f;
-                System.out.println(fps);
-            }
-            delta = Math.clamp(delta, 0f, 1f/30f); //Clamp delta to 30FPS to avoid glitches in case of lag spike, or `delta=0.0` at start.
-
-
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
-            physWorld.step(delta);
+            timeAccumulator += delta;
+            while(timeAccumulator >= fixedStepTime) {
+                physWorld.step(fixedStepTime); // Step the simulation
+                timeAccumulator -= fixedStepTime;
+            }
 
+            //Render particles
+            //These are the same for each particle
+            Matrix4f viewMat = new Matrix4f().translate(Camera.getInstance().getPos());
+            billboardShader.setMat4("view", viewMat);
+            billboardShader.setMat4("projection", Camera.getInstance().getMat());
+            //This though needs to be set per particle
             for (ParticleObject object : objects) {
-                object.render();
+                Matrix4f modelMat = new Matrix4f().translate(object.particle.getPos());
+
+                billboardShader.setMat4("model", modelMat);
+
+                triangle.draw();
             }
 
             glfwSwapBuffers(window); // swap the color buffers
             glfwPollEvents();
+
+            // Calculate delta time
+            double time = glfwGetTime();
+            delta = time - lastLoopTime;
+            lastLoopTime = time;
         }
     }
 

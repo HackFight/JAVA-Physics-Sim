@@ -1,10 +1,8 @@
 package dev.hackfight;
 
-import dev.hackfight.core.Camera;
-import dev.hackfight.core.Model;
-import dev.hackfight.core.Shader;
-import dev.hackfight.physics2d.Particle;
-import org.joml.Matrix4f;
+import dev.hackfight.core.*;
+import dev.hackfight.physics2d.pointMass.Particle;
+import org.joml.*;
 
 public class ParticleObject {
 
@@ -13,6 +11,18 @@ public class ParticleObject {
     private Model model;
     private Shader shader;
 
+    public ParticleObject(Model model, Shader shader, Vector3f pos, float mass) {
+        this.model = model;
+        this.shader = shader;
+
+        particle = new Particle(pos, mass);
+    }
+    public ParticleObject(Model model, Shader shader, Vector3f pos)  {
+        this.model = model;
+        this.shader = shader;
+
+        particle = new Particle(pos);
+    }
     public ParticleObject(Model model, Shader shader) {
         this.model = model;
         this.shader = shader;
