@@ -79,6 +79,19 @@ public class Swing {
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
                 glfwSetWindowShouldClose(window, true);
+
+            if (key == GLFW_KEY_W && action == GLFW_PRESS) {
+                Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getForward().mul(1f)));
+            }
+            if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+                Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getForward().mul(-1f)));
+            }
+            if (key == GLFW_KEY_A && action == GLFW_PRESS) {
+                Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getUp().cross(Camera.getInstance().getForward())).mul(1f));
+            }
+            if (key == GLFW_KEY_D && action == GLFW_PRESS) {
+                Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getUp().cross(Camera.getInstance().getForward())).mul(-1f));
+            }
         });
 
         // Get the thread stack and push a new frame
@@ -127,7 +140,7 @@ public class Swing {
         // Create particles
         ArrayList<ParticleObject> objects = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            ParticleObject object = new ParticleObject(triangle, billboardShader, new Vector3f(i*3f, 45f, i*3f));
+            ParticleObject object = new ParticleObject(triangle, billboardShader, new Vector3f(i*3f, 45f, 0f));
             objects.add(object);
             physWorld.addParticle(object.particle);
         }
@@ -148,11 +161,11 @@ public class Swing {
         physWorld.addConstraint(new FloorConstraint(all, 0f));
 
         //Only these model and shader  will be used so we can bind them here instead of each frame.
-        billboardShader.bind();
+        defaultShader.bind();
         triangle.bind();
 
-        Camera.create(new Vector3f(0f, 25f, -10f));
-        Camera.getInstance().setProj(45f, 1f, 1f);
+        Camera.getInstance().setPos(0f, 25f, -50f);
+        Camera.getInstance().setProj(90f, 1f, 1f);
 
         //Variables for delta time
         double lastLoopTime = glfwGetTime();
@@ -169,15 +182,18 @@ public class Swing {
                 timeAccumulator -= fixedStepTime;
             }
 
+            Vector3f camPos = Camera.getInstance().getPos();
+            System.out.println("(" + camPos.x + ", " + camPos.y + ", " + camPos.z + ")");
+
             //Render particles
             //These are the same for each particle
-            billboardShader.setMat4("view", Camera.getInstance().getView());
-            billboardShader.setMat4("projection", Camera.getInstance().getProj());
+            defaultShader.setMat4("view", Camera.getInstance().getView());
+            defaultShader.setMat4("projection", Camera.getInstance().getProj());
             //This though needs to be set per particle
             for (ParticleObject object : objects) {
                 Matrix4f modelMat = new Matrix4f().translate(object.particle.getPos());
 
-                billboardShader.setMat4("model", modelMat);
+                defaultShader.setMat4("model", modelMat);
 
                 triangle.draw();
             }
@@ -194,7 +210,7 @@ public class Swing {
 
     private void loadAssets() throws IOException {
         // shaders
-        defaultShader = new Shader(Path.of("src/main/resources/shaders/default.vert"), Path.of("src/main/resources/shaders/circle.frag"));
+        defaultShader = new Shader(Path.of("src/main/resources/shaders/default.vert"), Path.of("src/main/resources/shaders/default.frag"));
         billboardShader = new Shader(Path.of("src/main/resources/shaders/billboard.vert"), Path.of("src/main/resources/shaders/circle.frag"));
 
         // models

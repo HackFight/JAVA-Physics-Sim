@@ -19,13 +19,13 @@ public class Camera {
         return new Matrix4f(viewMat);
     }
     public void setProj(float angle, float width, float height) {
-        projectionMat.perspective((float) (angle/180f * Math.PI), width/height, 0.01f, 10f);
+        projectionMat.perspective((float) (angle/180f * Math.PI), width/height, 0.01f, 100f);
     }
     public Matrix4f getProj() {
         return new Matrix4f(projectionMat);
     }
 
-    private Vector3f getForward() {return new Vector3f(forward);}
+    public Vector3f getForward() {return new Vector3f(forward);}
     public void setForward(float x, float y, float z) {
         forward.x = x; forward.y = y; forward.z = z;
         updateView();
@@ -34,7 +34,7 @@ public class Camera {
         setForward(forward.x, forward.y, forward.z);
     }
 
-    private Vector3f getUp() {return new Vector3f(up);}
+    public Vector3f getUp() {return new Vector3f(up);}
     public void setUp(float x, float y, float z) {
         up.x = x; up.y = y; up.z = z;
         updateView();
