@@ -20,7 +20,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryStack.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
-public class Bounce {
+public class Swing {
 
     // The window handle
     private long window;
@@ -126,20 +126,20 @@ public class Bounce {
 
         // Create particles
         ArrayList<ParticleObject> objects = new ArrayList<>();
-        objects.add(new ParticleObject(triangle, billboardShader, new Vector3f(-1f, 10f, 0f)));
-        objects.add(new ParticleObject(triangle, billboardShader, new Vector3f(1f, 5f, 0f)));
-        for (ParticleObject object : objects) {
+        for (int i = 0; i < 10; i++) {
+            ParticleObject object = new ParticleObject(triangle, billboardShader, new Vector3f(i*3f, 45f, i*3f));
+            objects.add(object);
             physWorld.addParticle(object.particle);
         }
+        objects.getFirst().particle.setStatic();
 
         // Create constraints
-        /* //Let's ignore this shit
-        // TODO: FIX THIS AWIFWLAKGF£&*POKAL of Distance Constraint!!!!!!!!
-        ArrayList<Particle> pair = new ArrayList<>();
-        pair.add(objects.get(0).particle);
-        pair.add(objects.get(1).particle);
-        physWorld.addConstraint(new DistanceConstraint(pair, 5f));
-        */
+        for (int i = 0; i < objects.size() - 1; i++) {
+            ArrayList<Particle> pair = new ArrayList<>();
+            pair.add(objects.get(i).particle);
+            pair.add(objects.get(i+1).particle);
+            physWorld.addConstraint(new DistanceConstraint(pair, 3f));
+        }
 
         ArrayList<Particle> all = new ArrayList<>();
         for(ParticleObject object : objects) {
@@ -151,7 +151,8 @@ public class Bounce {
         billboardShader.bind();
         triangle.bind();
 
-        Camera.create(new Vector3f(0f, -5f, -1f));
+        Camera.create(new Vector3f(0f, 25f, -10f));
+        Camera.getInstance().setProj(45f, 1f, 1f);
 
         //Variables for delta time
         double lastLoopTime = glfwGetTime();
@@ -161,6 +162,7 @@ public class Bounce {
         while ( !glfwWindowShouldClose(window) ) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
+            // Step Physics World
             timeAccumulator += delta;
             while(timeAccumulator >= fixedStepTime) {
                 physWorld.step(fixedStepTime); // Step the simulation
@@ -169,9 +171,8 @@ public class Bounce {
 
             //Render particles
             //These are the same for each particle
-            Matrix4f viewMat = new Matrix4f().translate(Camera.getInstance().getPos());
-            billboardShader.setMat4("view", viewMat);
-            billboardShader.setMat4("projection", Camera.getInstance().getMat());
+            billboardShader.setMat4("view", Camera.getInstance().getView());
+            billboardShader.setMat4("projection", Camera.getInstance().getProj());
             //This though needs to be set per particle
             for (ParticleObject object : objects) {
                 Matrix4f modelMat = new Matrix4f().translate(object.particle.getPos());
@@ -216,18 +217,13 @@ public class Bounce {
         // height will be significantly larger than specified on retina displays.
         glViewport(0, 0, width, height);
         float ratio = (float) width/ (float) height;
-        if (width > height) {
-            Camera.getInstance().setCameraSize(-25f, 25f, -25f*(1/ratio), 25f*(1/ratio), 0.1f, 10f);
-        } else {
-            Camera.getInstance().setCameraSize(-25f*ratio, 25f*ratio, -25f, 25f, 0.1f, 10f);
-        }
+
+        //Camera.getInstance().setProj(45f, width, height);
     }
 
     public static void main(String[] args) {
-        //System.loadLibrary("renderdoc");
-
         try {
-            new Bounce().run();
+            new Swing().run();
         } catch (RuntimeException e) {
             System.out.println(e.getMessage());
         }

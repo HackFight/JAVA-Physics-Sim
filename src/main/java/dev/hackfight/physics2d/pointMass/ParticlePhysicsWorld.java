@@ -32,13 +32,19 @@ public class ParticlePhysicsWorld {
 
     public void step(float dt) {
         for (Particle particle : particles) {
-            particle.setVel(particle.getVel().add(getGravity().mul(dt)));
-            Vector3f lastPos = particle.getPos();
-            particle.setPos(particle.getPos().add(particle.getVel().mul(dt)));
+            if(!particle.isStatic()) {
+                particle.setVel(particle.getVel().add(getGravity().mul(dt)));
+                particle.setLastPos(particle.getPos());
+                particle.setPos(particle.getPos().add(particle.getVel().mul(dt)));
+            }
+        }
 
-            solve(dt);
+        solve(dt);
 
-            particle.setVel(particle.getPos().sub(lastPos).mul(1f/dt));
+        for (Particle particle : particles) {
+            if(!particle.isStatic()) {
+                particle.setVel(particle.getPos().sub(particle.getLastPos()).div(dt));
+            }
         }
     }
 

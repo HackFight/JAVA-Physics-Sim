@@ -31,13 +31,10 @@ public class ParticleObject {
     }
 
     public void render() {
-        Matrix4f modelMat = new Matrix4f().translate(particle.getPos());
-        Matrix4f viewMat = new Matrix4f().translate(Camera.getInstance().getPos());
-
         shader.bind();
-        shader.setMat4("model", modelMat);
-        shader.setMat4("view", viewMat);
-        shader.setMat4("projection", Camera.getInstance().getMat());
+        shader.setMat4("model", new Matrix4f().translate(particle.getPos()));
+        shader.setMat4("view", Camera.getInstance().getView());
+        shader.setMat4("projection", Camera.getInstance().getProj());
 
         model.bind();
         model.draw();

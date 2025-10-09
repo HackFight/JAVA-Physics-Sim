@@ -6,9 +6,11 @@ import java.lang.Math;
 
 public class Particle {
     private Vector3f position = new Vector3f();
+    private Vector3f lastPosition = new Vector3f();
     private Vector3f velocity = new Vector3f();
     private Vector3f force = new Vector3f();
     private float w = 1f;
+    private boolean isStatic;
 
     //Setters & getters
     public void setPos(float x, float y, float z) {
@@ -19,6 +21,16 @@ public class Particle {
     }
     public Vector3f getPos() {
         return new Vector3f(position);
+    }
+
+    public void setLastPos(float x, float y, float z) {
+        lastPosition.x = x; lastPosition.y = y; lastPosition.z = z;
+    }
+    public void setLastPos(Vector3f pos) {
+        setLastPos(pos.x, pos.y, pos.z);
+    }
+    public Vector3f getLastPos() {
+        return new Vector3f(lastPosition);
     }
 
     public void setVel(float x, float y, float z) {
@@ -43,6 +55,12 @@ public class Particle {
     public void addForce(Vector3f force) {
         this.force.add(force);
     }
+
+    public void setStatic() {
+        isStatic = true;
+        setW(0f);
+    }
+    public boolean isStatic() {return isStatic; }
 
     public void setMass(float mass) {
         if(mass <= 0f) {
