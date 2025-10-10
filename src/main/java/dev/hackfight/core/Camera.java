@@ -13,13 +13,13 @@ public class Camera {
     private Vector3f up = new Vector3f(0f, 1f, 0f);
 
     private void updateView() {
-        viewMat.lookAt(getPos(), getPos().add(forward), up);
+        viewMat = new Matrix4f().lookAt(getPos(), getPos().add(forward), up);
     }
     public Matrix4f getView() {
         return new Matrix4f(viewMat);
     }
     public void setProj(float angle, float width, float height) {
-        projectionMat.perspective((float) (angle/180f * Math.PI), width/height, 0.01f, 100f);
+        projectionMat = new Matrix4f().perspective((float) (angle/180f * Math.PI), width/height, 0.01f, 100f);
     }
     public Matrix4f getProj() {
         return new Matrix4f(projectionMat);

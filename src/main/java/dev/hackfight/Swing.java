@@ -87,10 +87,10 @@ public class Swing {
                 Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getForward().mul(-1f)));
             }
             if (key == GLFW_KEY_A && action == GLFW_PRESS) {
-                Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getUp().cross(Camera.getInstance().getForward())).mul(1f));
+                Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getUp().cross(Camera.getInstance().getForward()).mul(1f)));
             }
             if (key == GLFW_KEY_D && action == GLFW_PRESS) {
-                Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getUp().cross(Camera.getInstance().getForward())).mul(-1f));
+                Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getUp().cross(Camera.getInstance().getForward()).mul(-1f)));
             }
         });
 
@@ -140,7 +140,7 @@ public class Swing {
         // Create particles
         ArrayList<ParticleObject> objects = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            ParticleObject object = new ParticleObject(triangle, billboardShader, new Vector3f(i*3f, 45f, 0f));
+            ParticleObject object = new ParticleObject(triangle, billboardShader, new Vector3f(i*3f/1.41f, 45f, i*3/1.41f));
             objects.add(object);
             physWorld.addParticle(object.particle);
         }
@@ -161,7 +161,7 @@ public class Swing {
         physWorld.addConstraint(new FloorConstraint(all, 0f));
 
         //Only these model and shader  will be used so we can bind them here instead of each frame.
-        defaultShader.bind();
+        billboardShader.bind();
         triangle.bind();
 
         Camera.getInstance().setPos(0f, 25f, -50f);
@@ -182,18 +182,15 @@ public class Swing {
                 timeAccumulator -= fixedStepTime;
             }
 
-            Vector3f camPos = Camera.getInstance().getPos();
-            System.out.println("(" + camPos.x + ", " + camPos.y + ", " + camPos.z + ")");
-
             //Render particles
             //These are the same for each particle
-            defaultShader.setMat4("view", Camera.getInstance().getView());
-            defaultShader.setMat4("projection", Camera.getInstance().getProj());
+            billboardShader.setMat4("view", Camera.getInstance().getView());
+            billboardShader.setMat4("projection", Camera.getInstance().getProj());
             //This though needs to be set per particle
             for (ParticleObject object : objects) {
                 Matrix4f modelMat = new Matrix4f().translate(object.particle.getPos());
 
-                defaultShader.setMat4("model", modelMat);
+                billboardShader.setMat4("model", modelMat);
 
                 triangle.draw();
             }
@@ -234,7 +231,7 @@ public class Swing {
         glViewport(0, 0, width, height);
         float ratio = (float) width/ (float) height;
 
-        //Camera.getInstance().setProj(45f, width, height);
+        Camera.getInstance().setProj(90f, width, height);
     }
 
     public static void main(String[] args) {
