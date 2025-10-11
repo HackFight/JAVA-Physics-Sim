@@ -50,7 +50,7 @@ public class ParticlePhysicsWorld {
 
     private void solve(float dt) {
         for (Constraint constraint : constraints) {
-            constraint.solve();
+            constraint.solve(dt);
         }
     }
 }

@@ -9,6 +9,6 @@ public abstract class Constraint {
         this.particles = particles;
     }
 
-    public abstract void solve();
+    public abstract void solve(float dt);
 }
 

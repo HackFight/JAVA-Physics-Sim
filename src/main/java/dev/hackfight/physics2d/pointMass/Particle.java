@@ -8,7 +8,6 @@ public class Particle {
     private Vector3f position = new Vector3f();
     private Vector3f lastPosition = new Vector3f();
     private Vector3f velocity = new Vector3f();
-    private Vector3f force = new Vector3f();
     private float w = 1f;
     private boolean isStatic;
 
@@ -43,19 +42,6 @@ public class Particle {
         return new Vector3f(velocity);
     }
 
-    public void setForce(float x, float y, float z) {
-        force.x = x; force.y = y; force.z = z;
-    }
-    public void setForce(Vector3f force) {
-        setForce(force.x, force.y, force.z);
-    }
-    public void addForce(float x, float y, float z) {
-        force.add(x, y, z);
-    }
-    public void addForce(Vector3f force) {
-        this.force.add(force);
-    }
-
     public void setStatic() {
         isStatic = true;
         setW(0f);
@@ -76,10 +62,9 @@ public class Particle {
         return w;
     }
 
-    public Particle(Vector3f pos, Vector3f vel, Vector3f force, float mass) {
+    public Particle(Vector3f pos, Vector3f vel, float mass) {
         setPos(pos);
         setVel(vel);
-        setForce(force);
         setMass(mass);
     }
     public Particle(Vector3f pos, float mass) {

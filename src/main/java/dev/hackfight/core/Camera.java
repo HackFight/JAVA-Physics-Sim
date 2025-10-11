@@ -19,7 +19,7 @@ public class Camera {
         return new Matrix4f(viewMat);
     }
     public void setProj(float angle, float width, float height) {
-        projectionMat = new Matrix4f().perspective((float) (angle/180f * Math.PI), width/height, 0.01f, 100f);
+        projectionMat = new Matrix4f().perspective((float) (angle/180f * Math.PI), width/height, 0.01f, 10000f);
     }
     public Matrix4f getProj() {
         return new Matrix4f(projectionMat);

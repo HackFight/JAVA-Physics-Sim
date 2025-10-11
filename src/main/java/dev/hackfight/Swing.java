@@ -9,11 +9,13 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
 
 import java.io.IOException;
+import java.lang.Math;
 import java.nio.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Timer;
 
+import static java.lang.Math.*;
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -24,6 +26,17 @@ public class Swing {
 
     // The window handle
     private long window;
+
+    // Mouse stuff
+    private boolean cursorLocked = true;
+    private float cursorPosX = 400, cursorPosY = 400;
+    private float lastX = 400, lastY = 400;
+    float xoffset, yoffset;
+    private float sensitivity = 0.1f;
+    private boolean firstMouse = true;
+
+    //Camera stuff
+    float yaw = 90f, pitch = 0f;
 
     private Timer timer;
 
@@ -68,7 +81,7 @@ public class Swing {
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
         // Create the window
-        window = glfwCreateWindow(300, 300, "Hello World!", NULL, NULL);
+        window = glfwCreateWindow(800, 800, "Hello World!", NULL, NULL);
         if ( window == NULL )
             throw new RuntimeException("Failed to create the GLFW window");
 
@@ -78,20 +91,46 @@ public class Swing {
         // Setup a key callback
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
-                glfwSetWindowShouldClose(window, true);
+                if (cursorLocked) {
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                    cursorLocked = false;
+                } else {
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                    cursorLocked = true;
+                }
+        });
 
-            if (key == GLFW_KEY_W && action == GLFW_PRESS) {
-                Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getForward().mul(1f)));
+        glfwSetCursorPosCallback(window, (window, xpos, ypos) -> {
+
+            if (firstMouse) // initially set to true
+            {
+                lastX = (float) xpos;
+                lastY = (float) ypos;
+                firstMouse = false;
             }
-            if (key == GLFW_KEY_S && action == GLFW_PRESS) {
-                Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getForward().mul(-1f)));
-            }
-            if (key == GLFW_KEY_A && action == GLFW_PRESS) {
-                Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getUp().cross(Camera.getInstance().getForward()).mul(1f)));
-            }
-            if (key == GLFW_KEY_D && action == GLFW_PRESS) {
-                Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getUp().cross(Camera.getInstance().getForward()).mul(-1f)));
-            }
+
+            xoffset = (float) (xpos - lastX);
+            yoffset = (float) (lastY - ypos); // reversed since y-coordinates range from bottom to top
+            lastX = (float) xpos;
+            lastY = (float) ypos;
+
+            xoffset *= sensitivity;
+            yoffset *= sensitivity;
+
+            yaw   += xoffset;
+            pitch += yoffset;
+
+            //Constraint input
+            if(pitch > 89.0f)
+                pitch =  89.0f;
+            if(pitch < -89.0f)
+                pitch = -89.0f;
+
+            Vector3f direction = new Vector3f();
+            direction.x = (float) (cos(Math.toRadians(yaw)) * cos(Math.toRadians(pitch)));
+            direction.y = (float) sin(Math.toRadians(pitch));
+            direction.z = (float) (sin(Math.toRadians(yaw)) * cos(Math.toRadians(pitch)));
+            Camera.getInstance().setForward(direction.normalize());
         });
 
         // Get the thread stack and push a new frame
@@ -133,6 +172,8 @@ public class Swing {
         GL.createCapabilities();
         //Set buffer clear color cus why not
         glClearColor(0.270588235f, 0.2823529411764706f, 0.4235294117647059f, 0.0f); //#45486C
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE);
 
         // Instantiate the physic world
         physWorld = new ParticlePhysicsWorld();
@@ -140,40 +181,51 @@ public class Swing {
         // Create particles
         ArrayList<ParticleObject> objects = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            ParticleObject object = new ParticleObject(triangle, billboardShader, new Vector3f(i*3f/1.41f, 45f, i*3/1.41f));
-            objects.add(object);
-            physWorld.addParticle(object.particle);
-        }
-        objects.getFirst().particle.setStatic();
+            for (int j = 0; j < 10; j++) {
+                ParticleObject object = new ParticleObject(triangle, billboardShader, new Vector3f(j*3f, -i*3f, 0f));
+                objects.add(object);
+                physWorld.addParticle(object.particle);
 
-        // Create constraints
-        for (int i = 0; i < objects.size() - 1; i++) {
-            ArrayList<Particle> pair = new ArrayList<>();
-            pair.add(objects.get(i).particle);
-            pair.add(objects.get(i+1).particle);
-            physWorld.addConstraint(new DistanceConstraint(pair, 3f));
+                if(i==0) {
+                    object.particle.setStatic();
+                }
+            }
         }
-
-        ArrayList<Particle> all = new ArrayList<>();
-        for(ParticleObject object : objects) {
-            all.add(object.particle);
+        objects.getLast().particle.setVel(100f, 0f, 10f);
+        for (int j = 0; j < 10; j++) {
+            for (int i = 0; i < 9; i++) {
+                ArrayList<Particle> hpair = new ArrayList<>();
+                hpair.add(objects.get(j*10 + i).particle);
+                hpair.add(objects.get(j*10 + i + 1).particle);
+                physWorld.addConstraint(new DistanceConstraint(hpair, 3f));
+            }
         }
-        physWorld.addConstraint(new FloorConstraint(all, 0f));
+        for (int j = 0; j < 9; j++) {
+            for (int i = 0; i < 10; i++) {
+                ArrayList<Particle> vpair = new ArrayList<>();
+                vpair.add(objects.get(j * 10 + i).particle);
+                vpair.add(objects.get(j * 10 + i + 10).particle);
+                physWorld.addConstraint(new DistanceConstraint(vpair, 3f));
+            }
+        }
 
         //Only these model and shader  will be used so we can bind them here instead of each frame.
         billboardShader.bind();
         triangle.bind();
 
-        Camera.getInstance().setPos(0f, 25f, -50f);
+        Camera.getInstance().setPos(0f, 0f, -50f);
         Camera.getInstance().setProj(90f, 1f, 1f);
 
         //Variables for delta time
         double lastLoopTime = glfwGetTime();
         double delta = 0.0;
         double timeAccumulator = 0.0;
+        double fpsAccu = 0.0;
         float fixedStepTime = 1f/1000f;
         while ( !glfwWindowShouldClose(window) ) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
+
+            processInput();
 
             // Step Physics World
             timeAccumulator += delta;
@@ -202,7 +254,45 @@ public class Swing {
             double time = glfwGetTime();
             delta = time - lastLoopTime;
             lastLoopTime = time;
+
+            //Print FPS every second
+            fpsAccu += delta;
+            if(fpsAccu >= 1.0) {
+                System.out.println(1f/delta);
+                fpsAccu = 0.0;
+            }
         }
+    }
+
+    private void processInput() {
+        //Keyboard Inputs
+        int state;
+        state = glfwGetKey(window, GLFW_KEY_W);
+        if (state == GLFW_PRESS) {
+            Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getForward().mul(1f)));
+        }
+        state = glfwGetKey(window, GLFW_KEY_S);
+        if (state == GLFW_PRESS) {
+            Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getForward().mul(-1f)));
+        }
+        state = glfwGetKey(window, GLFW_KEY_A);
+        if (state == GLFW_PRESS) {
+            Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getUp().cross(Camera.getInstance().getForward()).normalize().mul(1f)));
+        }
+        state = glfwGetKey(window, GLFW_KEY_D);
+        if (state == GLFW_PRESS) {
+            Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getUp().cross(Camera.getInstance().getForward()).normalize().mul(-1f)));
+        }
+        state = glfwGetKey(window, GLFW_KEY_SPACE);
+        if (state == GLFW_PRESS) {
+            Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getUp().mul(1f)));
+        }
+        state = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT);
+        if (state == GLFW_PRESS) {
+            Camera.getInstance().setPos(Camera.getInstance().getPos().add(Camera.getInstance().getUp().mul(-1f)));
+        }
+
+        //Mouse inputs are in a callback higher in the code
     }
 
     private void loadAssets() throws IOException {

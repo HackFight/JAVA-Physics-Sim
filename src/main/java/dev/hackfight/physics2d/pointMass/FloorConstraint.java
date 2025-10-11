@@ -13,7 +13,7 @@ public class FloorConstraint extends Constraint {
     }
 
     @Override
-    public void solve() {
+    public void solve(float dt) {
         for (Particle particle : particles) {
             Vector3f pos = particle.getPos();
             if(pos.y < height) {

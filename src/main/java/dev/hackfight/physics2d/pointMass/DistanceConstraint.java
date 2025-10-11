@@ -15,7 +15,10 @@ public class DistanceConstraint extends Constraint {
 
 
     @Override
-    public void solve() {
+    public void solve(float dt) {
+        if(particles.get(0).isStatic() && particles.get(1).isStatic()) {
+            return;
+        }
 
         Vector3f dif = particles.get(1).getPos().sub(particles.get(0).getPos()).normalize(particles.get(1).getPos().sub(particles.get(0).getPos()));
         float d = particles.get(1).getPos().sub(particles.get(0).getPos()).length()-restDistance;
