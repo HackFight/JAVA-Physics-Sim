@@ -9,7 +9,7 @@ public class Camera {
     private Matrix4f viewMat = new Matrix4f();
     private Matrix4f projectionMat = new Matrix4f();
     private Vector3f position;
-    private Vector3f forward = new Vector3f(0f, 0f, 1f);
+    private Vector3f forward = new Vector3f(0f, 0f, -1f);
     private Vector3f up = new Vector3f(0f, 1f, 0f);
 
     private void updateView() {

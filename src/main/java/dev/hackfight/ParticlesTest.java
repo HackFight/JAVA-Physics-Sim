@@ -22,7 +22,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryStack.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
-public class Swing {
+public class ParticlesTest {
 
     // The window handle
     private long window;
@@ -36,7 +36,7 @@ public class Swing {
     private boolean firstMouse = true;
 
     //Camera stuff
-    float yaw = 90f, pitch = 0f;
+    float yaw = -90f, pitch = 0f;
 
     private Timer timer;
 
@@ -178,11 +178,11 @@ public class Swing {
         // Instantiate the physic world
         physWorld = new ParticlePhysicsWorld();
 
-        // Create particles
+        // Create lattice
         ArrayList<ParticleObject> objects = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
-                ParticleObject object = new ParticleObject(triangle, billboardShader, new Vector3f(j*3f, -i*3f, 0f));
+                ParticleObject object = new ParticleObject(triangle, billboardShader, new Vector3f(j*3f, -i*3f + 30f, 0f));
                 objects.add(object);
                 physWorld.addParticle(object.particle);
 
@@ -209,11 +209,84 @@ public class Swing {
             }
         }
 
+        // Create pyramid
+        {
+            ParticleObject object = new ParticleObject(triangle, billboardShader, new Vector3f(5f, 0f, 5f));
+            objects.add(object);
+            physWorld.addParticle(object.particle);
+            object = new ParticleObject(triangle, billboardShader, new Vector3f(8f, 0f, 5f));
+            objects.add(object);
+            physWorld.addParticle(object.particle);
+            object = new ParticleObject(triangle, billboardShader, new Vector3f(5f, 0f, 8f));
+            objects.add(object);
+            physWorld.addParticle(object.particle);
+            object = new ParticleObject(triangle, billboardShader, new Vector3f(8f, 0f, 8f));
+            objects.add(object);
+            physWorld.addParticle(object.particle);
+            object = new ParticleObject(triangle, billboardShader, new Vector3f(6.5f, 3f, 6.5f));
+            objects.add(object);
+            physWorld.addParticle(object.particle);
+
+            ArrayList<Particle> pair0 = new ArrayList<>();
+            pair0.add(objects.getLast().particle);
+            pair0.add(objects.get(objects.size()-2).particle);
+
+            ArrayList<Particle> pair1 = new ArrayList<>();
+            pair1.add(objects.getLast().particle);
+            pair1.add(objects.get(objects.size()-3).particle);
+
+            ArrayList<Particle> pair2 = new ArrayList<>();
+            pair2.add(objects.getLast().particle);
+            pair2.add(objects.get(objects.size()-4).particle);
+
+            ArrayList<Particle> pair3 = new ArrayList<>();
+            pair3.add(objects.getLast().particle);
+            pair3.add(objects.get(objects.size()-5).particle);
+
+            ArrayList<Particle> pair4 = new ArrayList<>();
+            pair4.add(objects.get(objects.size()-2).particle);
+            pair4.add(objects.get(objects.size()-3).particle);
+
+            ArrayList<Particle> pair5 = new ArrayList<>();
+            pair5.add(objects.get(objects.size()-3).particle);
+            pair5.add(objects.get(objects.size()-4).particle);
+
+            ArrayList<Particle> pair6 = new ArrayList<>();
+            pair6.add(objects.get(objects.size()-4).particle);
+            pair6.add(objects.get(objects.size()-5).particle);
+
+            ArrayList<Particle> pair7 = new ArrayList<>();
+            pair7.add(objects.get(objects.size()-2).particle);
+            pair7.add(objects.get(objects.size()-4).particle);
+
+            ArrayList<Particle> pair8 = new ArrayList<>();
+            pair8.add(objects.get(objects.size()-3).particle);
+            pair8.add(objects.get(objects.size()-5).particle);
+
+            physWorld.addConstraint(new DistanceConstraint(pair0, pair0.get(0).getPos().sub(pair0.get(1).getPos()).length()));
+            physWorld.addConstraint(new DistanceConstraint(pair1, pair1.get(0).getPos().sub(pair1.get(1).getPos()).length()));
+            physWorld.addConstraint(new DistanceConstraint(pair2, pair2.get(0).getPos().sub(pair2.get(1).getPos()).length()));
+            physWorld.addConstraint(new DistanceConstraint(pair3, pair3.get(0).getPos().sub(pair3.get(1).getPos()).length()));
+            physWorld.addConstraint(new DistanceConstraint(pair4, pair4.get(0).getPos().sub(pair4.get(1).getPos()).length()));
+            physWorld.addConstraint(new DistanceConstraint(pair5, pair5.get(0).getPos().sub(pair5.get(1).getPos()).length()));
+            physWorld.addConstraint(new DistanceConstraint(pair6, pair6.get(0).getPos().sub(pair6.get(1).getPos()).length()));
+            physWorld.addConstraint(new DistanceConstraint(pair7, pair7.get(0).getPos().sub(pair7.get(1).getPos()).length()));
+            physWorld.addConstraint(new DistanceConstraint(pair8, pair8.get(0).getPos().sub(pair8.get(1).getPos()).length()));
+        }
+
+        //Floor constraint
+        ArrayList<Particle> all = new ArrayList<>();
+        for(ParticleObject object : objects)
+        {
+            all.add(object.particle);
+        }
+        physWorld.addConstraint(new FloorConstraint(all, 0f));
+
         //Only these model and shader  will be used so we can bind them here instead of each frame.
         billboardShader.bind();
         triangle.bind();
 
-        Camera.getInstance().setPos(0f, 0f, -50f);
+        Camera.getInstance().setPos(0f, 0f, 50f);
         Camera.getInstance().setProj(90f, 1f, 1f);
 
         //Variables for delta time
@@ -326,7 +399,7 @@ public class Swing {
 
     public static void main(String[] args) {
         try {
-            new Swing().run();
+            new ParticlesTest().run();
         } catch (RuntimeException e) {
             System.out.println(e.getMessage());
         }
